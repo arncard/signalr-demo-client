@@ -33,13 +33,13 @@ export class AppComponent implements OnInit {
   ngOnInit()
   {
     this.signalRService.startConnection();
-    this.signalRService.addTransferChartDataListener();
-    this.signalRService.addbBroadcastChartDataListener();
+    this.signalRService.addTransferCalendarDataListener();
+    this.signalRService.addbBroadcastCalendarDataListener();
     this.startHttpRequest();
   }
 
   private startHttpRequest = () => {
-    this.http.get('https://localhost:5001/api/chart')
+    this.http.get('https://localhost:5001/api/calendar')
       .subscribe(res => {
         console.log(res);
       })

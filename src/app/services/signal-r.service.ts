@@ -14,7 +14,7 @@ export class SignalRService {
 
   public startConnection = () => {
     this.hubConnection = new signalR.HubConnectionBuilder()
-    .withUrl('https://localhost:5001/chart')
+    .withUrl('https://localhost:5001/calendar')
     .build();
 
     this.hubConnection
@@ -23,14 +23,14 @@ export class SignalRService {
     .catch(err => console.log('Error while starting connection: ' + err))
   }
 
-  public addTransferChartDataListener = () => {
-    this.hubConnection.on('transferchartdata', (data) => {
+  public addTransferCalendarDataListener = () => {
+    this.hubConnection.on('transfercalendardata', (data) => {
       this.data = data;
       console.log(this.data);
     })
   }
 
-  public broadcastChartData = () => {
+  public broadcastCalendarData = () => {
     const data = this.data.map(m => {
       const temp = {
         data: m.data,
@@ -39,12 +39,12 @@ export class SignalRService {
       return temp;
     });
 
-    this.hubConnection.invoke('broadcastchartdata', data)
+    this.hubConnection.invoke('broadcastcalendardata', data)
       .catch(err => console.log(err));
   } 
 
-  public addbBroadcastChartDataListener = () => {
-    this.hubConnection.on('broadcastchartdata', (data) => 
+  public addbBroadcastCalendarDataListener = () => {
+    this.hubConnection.on('broadcastcalendardata', (data) => 
     {
       this.broadcastedData = data;
     })
