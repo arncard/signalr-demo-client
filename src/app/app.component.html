@@ -1,4 +1,4 @@
-<div style="display: block" *ngIf='signalRService.data'>
+<!-- <div style="display: block" *ngIf='signalRService.data'>
   <canvas baseChart
     [datasets]="signalRService.data"
     [labels]="chartLabels"
@@ -14,4 +14,12 @@
   <li *ngFor='let data of signalRService.broadcastedData'>
     <strong>Label: </strong> {{data.Label}} - <strong>Value: </strong> {{data.data[0]}}
   </li>
-</ul>
+</ul> -->
+<kendo-scheduler
+    [kendoSchedulerBinding]="events"
+    [kendoSchedulerReactiveEditing]="createFormGroup"
+    [selectedDate]="selectedDate"
+    style="height: 600px;">
+    <kendo-scheduler-week-view startTime="07:00">
+    </kendo-scheduler-week-view>
+</kendo-scheduler>
