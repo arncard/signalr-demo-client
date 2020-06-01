@@ -15,11 +15,21 @@
     <strong>Label: </strong> {{data.Label}} - <strong>Value: </strong> {{data.data[0]}}
   </li>
 </ul> -->
-<kendo-scheduler
-    [kendoSchedulerBinding]="events"
-    [kendoSchedulerReactiveEditing]="createFormGroup"
-    [selectedDate]="selectedDate"
-    style="height: 600px;">
-    <kendo-scheduler-week-view startTime="07:00">
-    </kendo-scheduler-week-view>
-</kendo-scheduler>
+
+<div>
+  <kendo-scheduler
+      [kendoSchedulerBinding]="signalRService.data"
+      [kendoSchedulerReactiveEditing]="createFormGroup"
+      [selectedDate]="selectedDate"
+      style="height: 600px;"
+      (save)="saveHandler($event)">
+      <kendo-scheduler-week-view startTime="07:00">
+      </kendo-scheduler-week-view>
+  </kendo-scheduler>
+</div>
+
+<ul>
+  <li *ngFor='let data of signalRService.broadcastedData'>
+    <strong>Id: </strong> {{data.id}} - <strong>Title: </strong> {{data.title}} - <strong>start: </strong> {{data.start}}
+  </li>
+</ul>

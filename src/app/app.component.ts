@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { SignalRService } from './services/signal-r.service';
 import { HttpClient } from '@angular/common/http';
-import { SchedulerEvent, CreateFormGroupArgs } from '@progress/kendo-angular-scheduler';
+import { SchedulerEvent, CreateFormGroupArgs, SaveEvent, EditMode, SchedulerComponent } from '@progress/kendo-angular-scheduler';
 import { sampleData, displayDate } from './events-utc';
 import { FormGroup, FormBuilder, Validators, ValidatorFn } from '@angular/forms';
+import { EditService } from './edit.service';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -11,29 +14,42 @@ import { FormGroup, FormBuilder, Validators, ValidatorFn } from '@angular/forms'
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  public selectedDate: Date = new Date('2018-10-22T00:00:00');
+  private ngUnsubscribe: Subject<boolean> = new Subject<boolean>();
+  public selectedDate: Date = new Date('2020-06-01T00:00:00');
     public formGroup: FormGroup;
     public events: SchedulerEvent[] = [{
         id: 1,
         title: 'Breakfast',
-        start: new Date('2018-10-22T09:00:00'),
-        end: new Date('2018-10-22T09:30:00'),
+        start: new Date('2020-06-01T09:00:00'),
+        end: new Date('2020-06-01T09:30:00'),
         recurrenceRule: 'FREQ=DAILY;COUNT=5;'
     }];
 
     constructor(public signalRService: SignalRService, private http: HttpClient, 
-                private formBuilder: FormBuilder) {
+                private formBuilder: FormBuilder, public editService: EditService,
+                private cd: ChangeDetectorRef) {
         this.createFormGroup = this.createFormGroup.bind(this);
     }
 
     ngOnInit()
     {
+      this.signalRService.data = this.events;
       this.signalRService.startConnection();
       this.signalRService.addTransferCalendarDataListener();
       this.signalRService.addbBroadcastCalendarDataListener();
+      this.signalRService.dataListChange$.pipe(takeUntil(this.ngUnsubscribe)).subscribe((dataList: SchedulerEvent[]) => {
+        this.updateData(dataList);
+      });
       this.startHttpRequest();
     }
     
+    private startHttpRequest = () => {
+      this.http.get('https://localhost:5001/api/calendar')
+        .subscribe(res => {
+          console.log(res);
+        })
+    }
+
     public createFormGroup(args: CreateFormGroupArgs): FormGroup {
         const dataItem = args.dataItem;
 
@@ -72,14 +88,52 @@ export class AppComponent implements OnInit {
         }
     }
 
+    public saveHandler({ sender, formGroup, isNew, dataItem, mode }: SaveEvent): void {
+      if (formGroup.valid) {
+          const formValue = formGroup.value;
+         
+          this.signalRService.data.push(<SchedulerEvent> {
+            id: formGroup.value.id,
+            start: formGroup.value.start,
+            end: formGroup.value.end,
+            title: formGroup.value.title});
+        
+          if (isNew) {
+              this.editService.create(formValue);
+          } else {
+              this.handleUpdate(dataItem, formValue, mode);
+          }
+          this.signalRService.broadcastCalendarData();   
+          this.closeEditor(sender);
+      }
+   }
 
-    
-  private startHttpRequest = () => {
-    this.http.get('https://localhost:5001/api/calendar')
-      .subscribe(res => {
-        console.log(res);
-      })
+   public updateData(list: SchedulerEvent[])
+   { 
+     this.editService.read();
+     this.cd.detectChanges();
+   }
+
+   private closeEditor(scheduler: SchedulerComponent): void {
+      scheduler.closeEvent();
+
+      this.formGroup = undefined;
   }
+
+  private handleUpdate(item: any, value: any, mode?: EditMode): void {
+    const service = this.editService;
+    if (mode === EditMode.Occurrence) {
+        if (service.isException(item)) {
+            service.update(item, value);
+        } else {
+            service.createException(item, value);
+        }
+    } else {
+        // The item is non-recurring or we are editing the entire series.
+        service.update(item, value);
+    }
+  }
+  
 
 
 
